@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "同步觀影",
+  "version": "2.0",
+  "description": "和朋友同步 YouTube / Netflix / 愛奇藝的播放、暫停、跳轉",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3VQkz0rTpxzrp6cV1DHJVTJeZqsSu3qio4rQAcsDNuWg22zAD8tF9kEWm6bj7b3VtEjFqMeAiU0nVmszsjmCYiLIe7g9QF3HD4XZQkkkrJqUMp4qmpIC4npG5FhCXgJi7tlhYJmk8JbDKMMcBhPSgqF3jqtl6BHJ3yPnAFfSkURIR7xIrBHgh3Nl0ZfdiehIao3xTBWZTpggwKDAGk6QIMs2GDlC2jsa/yywAffjauGja+sjRX/6gm4pVnsiQ5o5CpmB2uaTZTtLKtIgdTIfhCEIZbeSMbiSo1nMe7fKaESDJnx2KUvaniIeI/4QxRH1Dk4UFSPh+fQwqqzNGAFU3QIDAQAB",
+  "minimum_chrome_version": "111",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.iqiyi.com/*",
+        "https://*.iq.com/*",
+        "https://*.youtube.com/*",
+        "https://*.netflix.com/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.iqiyi.com/*",
+        "https://*.iq.com/*",
+        "https://*.youtube.com/*",
+        "https://*.netflix.com/*"
+      ],
+      "js": [
+        "main.js"
+      ],
+      "world": "MAIN",
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ]
+}

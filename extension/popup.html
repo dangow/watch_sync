@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  body { width: 260px; font: 14px sans-serif; padding: 12px; }
+  input[type=text] { width: 100%; box-sizing: border-box; margin: 4px 0 10px; padding: 6px; }
+  button { width: 100%; padding: 8px; }
+  #msg { color: #080; margin-top: 8px; min-height: 1em; }
+  #msg.warn { color: #b45309; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-weight: bold; }
+  /* 開關 */
+  .sw { position: relative; width: 44px; height: 24px; flex: none; }
+  .sw input { opacity: 0; width: 0; height: 0; }
+  .sw span { position: absolute; inset: 0; background: #bbb; border-radius: 24px; cursor: pointer; transition: .2s; }
+  .sw span::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .sw input:checked + span { background: #1a7f37; }
+  .sw input:checked + span::before { transform: translateX(20px); }
+  .sw input:focus-visible + span { outline: 2px solid #1a73e8; outline-offset: 2px; }
+  #fields.off { opacity: .5; }
+</style>
+<div class="top">
+  <span id="state">同步：開啟</span>
+  <label class="sw"><input type="checkbox" id="enabled" checked><span></span></label>
+</div>
+<div id="fields">
+  <label>伺服器網址 (wss://...；本機測試才可用 ws://localhost:8080)</label>
+  <input type="text" id="server" placeholder="wss://your-server.example.com">
+  <label>房間代碼 (大家填一樣，至少 8 個字元，越難猜越好)</label>
+  <input type="text" id="room" placeholder="例如 dango-9x7k-movie">
+  <button id="save">儲存並連線</button>
+</div>
+<div id="msg"></div>
+<script src="popup.js"></script>

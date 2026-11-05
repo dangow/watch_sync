@@ -1,0 +1,85 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>同步看 YouTube</title>
+<style>
+  body { font: 16px sans-serif; margin: 0; padding: 12px; }
+  input, button { width: 100%; box-sizing: border-box; padding: 10px; margin: 4px 0; font-size: 16px; }
+  #p { width: 100%; aspect-ratio: 16/9; margin-top: 8px; }
+  #s { color: #555; margin: 6px 0; }
+</style>
+<input id="room" placeholder="房間代碼（跟朋友一樣）">
+<input id="url" placeholder="貼上 YouTube 網址">
+<button id="go">進入房間並載入影片</button>
+<button id="push">推送我的進度給對方</button>
+<div id="s">尚未連線</div>
+<div id="p"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const vidOf = (u) => (u.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/) || [])[1];
+  let ws, pl, vid, applying = false, lastCount = 0;
+  const peer = crypto.randomUUID ? crypto.randomUUID() : [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
+
+  const lock = () => { applying = true; setTimeout(() => (applying = false), 1500); };
+  const send = (type) => {
+    if (ws && ws.readyState === 1 && pl && !applying)
+      ws.send(JSON.stringify({ type, time: pl.getCurrentTime(), vid }));
+  };
+
+  const sendNav = () => {
+    if (ws && ws.readyState === 1 && vid)
+      ws.send(JSON.stringify({ type: 'nav', url: 'https://www.youtube.com/watch?v=' + vid }));
+  };
+
+  function load(id) {
+    vid = id;
+    lock();
+    if (pl) return pl.loadVideoById(id);
+    pl = new YT.Player('p', {
+      videoId: id,
+      playerVars: { playsinline: 1 },
+      events: { onStateChange: (e) => { if (e.data === 1) send('play'); else if (e.data === 2) send('pause'); } },
+    });
+  }
+
+  function handle(m) {
+    if (typeof m.vid === 'string' && /^[\w-]{11}$/.test(m.vid) && m.vid !== vid) load(m.vid);
+    if (!pl || !pl.seekTo) return;
+    lock();
+    if (typeof m.time === 'number' && Math.abs(pl.getCurrentTime() - m.time) > 0.5) pl.seekTo(m.time, true);
+    if (m.type === 'play') pl.playVideo(); else if (m.type === 'pause') pl.pauseVideo();
+  }
+
+  function connect() {
+    if (ws) { ws.onclose = null; ws.close(); }
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+    ws.onopen = () => ws.send(JSON.stringify({ type: 'join', room: $('room').value.trim(), peer }));
+    ws.onmessage = (e) => {
+      let m;
+      try { m = JSON.parse(e.data); } catch { return; }
+      if (m.type === 'status') { $('s').textContent = String(m.text || '').slice(0, 100); return; }
+      if (m.type === 'peers') {
+        $('s').textContent = `已連線（房內 ${m.count} 人）`;
+        if (!m.me && m.count > lastCount) sendNav();
+        lastCount = m.count;
+      } else if (m.type === 'nav') {
+        const id = vidOf(m.url || '');
+        if (id && id !== vid) load(id);
+      } else if (m.type === 'play' || m.type === 'pause') handle(m);
+    };
+    ws.onclose = (e) => {
+      if (e.code === 1008) return;   // 伺服器拒絕加入：不自動重連，改好房間代碼再按一次按鈕
+      if (e.code !== 1013) $('s').textContent = '斷線，重連中…';
+      setTimeout(connect, e.code === 1013 ? 30000 : 3000);
+    };
+  }
+
+  $('go').onclick = () => {
+    const id = vidOf($('url').value);
+    if (!$('room').value.trim()) return ($('s').textContent = '請填房間代碼');
+    if (!ws || ws.readyState > 1) { connect(); if (id) load(id); }
+    else if (id && id !== vid) { load(id); sendNav(); }
+  };
+  $('push').onclick = () => send(pl && pl.getPlayerState() === 1 ? 'play' : 'pause');
+</script>
