@@ -8,12 +8,24 @@
   let page = null;   // 到 main.js 的私有通道
   const toMain = (m) => { if (page) page.postMessage(m); };
 
+  // 擴充功能被重新載入或移除後，這個頁面上的舊程式就再也連不到背景了
+  const extAlive = () => { try { return !!chrome.runtime.id; } catch { return false; } };
+  let deadNotified = false;
+  function dead() {
+    if (deadNotified) return;
+    deadNotified = true;
+    toMain({ type: 'status', text: '擴充功能已更新，請重新整理頁面', ok: false });
+  }
+
   function open() {
-    port = chrome.runtime.connect({ name: 'sync' });
+    if (!extAlive()) return dead();
+    try { port = chrome.runtime.connect({ name: 'sync' }); } catch { port = null; return dead(); }
     port.onMessage.addListener(toMain);
     port.onDisconnect.addListener(() => {
       port = null;
-      toMain({ type: 'status', text: '背景中斷，請重新整理頁面', ok: false });
+      // 背景程式閒置時會被瀏覽器暫停（開關關閉時約 30 秒就會發生），這是正常的：
+      // 不顯示任何訊息，main.js 下一秒輪詢時會自動重新連上。
+      if (!extAlive()) dead();
     });
   }
 
