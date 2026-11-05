@@ -42,8 +42,12 @@ watch-sync/
 │  └─ popup.html / popup.js   設定視窗
 ├─ ios/
 │  └─ watch-sync-iqiyi.user.js   iPhone / iPad 看愛奇藝的腳本
+├─ docs/
+│  └─ ARCHITECTURE.md    專案結構、功能對應檔案、訊息格式、流程說明
 └─ README.md
 ```
+
+各檔案的詳細功能、訊息格式與主要流程，請看 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ---
 
